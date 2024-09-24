@@ -1,0 +1,13 @@
+displayName: Demo Plugin WASM
+runtime: wasm
+type: middleware
+iconPath: .assets/icon.png
+
+import: github.com/traefik/plugindemowasm
+
+summary: '[Demo WASM] Add Request Header'
+
+testData:
+  Headers:
+    X-Demo: test
+    X-URL: 'http://example.localhost/'

@@ -1,0 +1,26 @@
+# Dynamic configuration
+
+http:
+  routers:
+    my-router:
+      rule: Host(`localhost`)
+      service: service-foo
+      entryPoints:
+        - web
+      middlewares:
+        - demowasm
+
+  services:
+   service-foo:
+      loadBalancer:
+        passHostHeader: false
+        servers:
+          - url: http://www.example.com/
+
+  middlewares:
+    demowasm:
+      plugin:
+        demowasm:
+          headers:
+            X-Demo: testxxxxx
+            X-URL: 'http://example.localhost/'
