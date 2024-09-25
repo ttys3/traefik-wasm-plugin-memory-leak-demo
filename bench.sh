@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
 
-ab -n 1000 -c 100 http://localhost:6688/
+ab -v 3 -k -n 1000000 -c 1000 http://localhost:6688/
 
 
