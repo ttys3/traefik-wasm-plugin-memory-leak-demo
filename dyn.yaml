@@ -15,7 +15,7 @@ http:
       loadBalancer:
         passHostHeader: false
         servers:
-          - url: http://www.example.com/
+          - url: http://127.0.0.1:8000/
 
   middlewares:
     demowasm:

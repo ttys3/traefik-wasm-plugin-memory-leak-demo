@@ -1,7 +1,8 @@
 # Static configuration
 
 log:
-  level: TRACE
+  #level: TRACE
+  level: INFO
 
 global:
   checkNewVersion: false
