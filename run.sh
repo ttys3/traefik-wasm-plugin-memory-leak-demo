@@ -2,5 +2,5 @@
 
 set -eou pipefail
 
-./traefik --configFile=./traefik.yaml
+env GOGC=50 GODEBUG=gctrace=1 ./traefik --configFile=./traefik.yaml
 
