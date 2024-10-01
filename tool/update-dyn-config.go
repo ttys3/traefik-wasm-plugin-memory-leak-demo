@@ -88,7 +88,7 @@ func main() {
 		service.LoadBalancer.Servers = servers
 		config.Http.Services["service-foo"] = service
 
-		for i := 0; i < 100; i++ {
+		for i := 0; i < 50; i++ {
 			svc := fmt.Sprintf("svc-%d", i)
 			config.Http.Services[svc] = service
 
