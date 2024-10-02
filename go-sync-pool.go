@@ -77,6 +77,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		buf = NewLargeBufferWrapper()
 		fmt.Printf("buffer created, current_total: %d\n", totalCreated.Load())
 
+		// Below code is not naccessary, golang runtime can GC the object even without call to buf.Close()
 		// runtime.SetFinalizer(buf, func(buf *LargeBufferWrapper) {
 		// 	fmt.Printf("finalizer called, current_total: %d\n", totalCreated.Load())
 		// 	buf.Close()
