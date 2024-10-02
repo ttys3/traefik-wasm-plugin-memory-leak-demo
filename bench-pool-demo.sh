@@ -2,5 +2,5 @@
 
 set -eou pipefail
 
-ab -v 3 -k -n 10000 -c 1000 http://localhost:8079/
+ab -v 3 -k -n 40000 -c 20000 http://localhost:8079/
 

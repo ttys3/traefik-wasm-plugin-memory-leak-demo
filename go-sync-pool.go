@@ -1,37 +1,104 @@
 package main
 
+// #include <stdlib.h>
+// #include <stdio.h>
+//
+// typedef struct {
+//     int  id;
+//     char data[1024*1024*2];
+// } LargeBuffer;
+//
+// LargeBuffer* createLargeBuffer() {
+// LargeBuffer* buf = (LargeBuffer*)malloc(sizeof(LargeBuffer));
+// if (buf == NULL) {
+// 	printf("Error: Failed to allocate memory for LargeBuffer\n");
+//     return NULL;
+// }
+// buf->id = 123;
+// return buf;
+// }
+//
+// void freeLargeBuffer(LargeBuffer* buf) {
+//     free(buf);
+// }
+import "C"
 import (
 	"fmt"
-	"io"
+	"math/rand/v2"
 	"net/http"
+	"sync"
+	"sync/atomic"
+	"time"
+	"unsafe"
+
 	_ "net/http/pprof"
 	"runtime"
-	"sync"
 )
 
-var bytePool = sync.Pool{
-	New: func() interface{} {
-		// Create a new byte slice when a new one is needed
-		return make([]byte, 1024*1024*2) // allocate 2 MB
-	},
+var totalCreated atomic.Int64
+
+var lock sync.Mutex
+
+// LargeBufferWrapper wraps the C LargeBuffer struct
+type LargeBufferWrapper struct {
+	cBuffer *C.LargeBuffer
 }
+
+// NewLargeBufferWrapper creates a new LargeBufferWrapper
+func NewLargeBufferWrapper() *LargeBufferWrapper {
+	totalCreated.Add(1)
+
+	return &LargeBufferWrapper{
+		cBuffer: C.createLargeBuffer(),
+	}
+}
+
+// Close frees the allocated memory
+func (lbw *LargeBufferWrapper) Close() {
+	if lbw.cBuffer != nil {
+		totalCreated.Add(-1)
+		C.freeLargeBuffer(lbw.cBuffer)
+		lbw.cBuffer = nil
+	}
+}
+
+// Data returns a byte slice of the underlying buffer
+func (lbw *LargeBufferWrapper) Data() []byte {
+	return (*[1024 * 1024 * 2]byte)(unsafe.Pointer(lbw.cBuffer))[:]
+}
+
+var bytePool = sync.Pool{}
 
 func handler(w http.ResponseWriter, r *http.Request) {
 	// Get a byte slice from the pool
-	buf := bytePool.Get().([]byte)
+	buf, ok := bytePool.Get().(*LargeBufferWrapper)
 
-	// Ensure the buffer is put back into the pool at the end of this function
-	defer bytePool.Put(buf)
+	if buf == nil {
+		buf = NewLargeBufferWrapper()
+		fmt.Printf("buffer created, current_total: %d\n", totalCreated.Load())
 
-	// Read the request body into the buffer (assuming a small request body for simplicity)
-	n, err := r.Body.Read(buf)
-	if err != nil && err != io.EOF {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+		// runtime.SetFinalizer(buf, func(buf *LargeBufferWrapper) {
+		// 	fmt.Printf("finalizer called, current_total: %d\n", totalCreated.Load())
+		// 	buf.Close()
+		// })
+	} else if !ok {
+		fmt.Println("-------------- buffer invalid --------------")
 	}
 
+	// Ensure the buffer is put back into the pool at the end of this function
+	defer func() {
+		// Simulate some work
+		time.Sleep(time.Millisecond * 10)
+		bytePool.Put(buf)
+	}()
+
+	buf.cBuffer.id = C.int(rand.IntN(1000000))
+	dummy := []byte(fmt.Sprintf("hello world %d", buf.cBuffer.id))
+	// write dummy data to the buffer
+	copy(buf.Data(), dummy)
+
 	// Process the buffer (this example just echoes it back)
-	w.Write(buf[:n])
+	w.Write(buf.Data()[:len(dummy)])
 }
 
 func main() {
