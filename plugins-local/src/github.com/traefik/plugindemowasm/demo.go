@@ -46,7 +46,7 @@ func New(config Config) (*Demo, error) {
 	handler.Host.Log(api.LogLevelInfo, fmt.Sprintf("Demo load config %v", config))
 	return &Demo{
 		headers: config.Headers,
-		box:     make([]byte, 1024*1024*2),
+		box:     make([]byte, 1024*1024*20),
 	}, nil
 }
 
